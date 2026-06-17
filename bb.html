@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TopMcsh Panel v4.5 Enterprise</title>
+    <style>
+        :root { --bg: #090d16; --card: #111827; --border: #1f2937; --text: #f9fafb; --muted: #9ca3af; --success: #10b981; --warning: #f59e0b; --danger: #ef4444; --primary: #2563eb; }
+        *, *::before, *::after { box-sizing: border-box; }
+        body { font-family: system-ui, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 10px; min-height: 100vh; display: flex; justify-content: center; align-items: center; overflow-x: hidden; width: 100%; }
+        #welcomeScreen, #tariffScreen, #mainPanelLayout { width: 100%; max-width: 750px; display: none; }
+        #welcomeScreen { display: block; text-align: center; }
+        #welcomeScreen h1 { font-size: 38px; margin-bottom: 15px; background: linear-gradient(to right, #10b981, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .btn-main { background: #10b981; color: white; border: none; padding: 14px 40px; font-size: 16px; font-weight: bold; border-radius: 25px; cursor: pointer; transition: background 0.2s, transform 0.2s; }
+        .btn-main:hover { background: #059669; transform: translateY(-2px); }
+        .tariff-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-top: 20px; }
+        .tariff-card { background: var(--card); border: 1px solid var(--border); padding: 15px; border-radius: 8px; cursor: pointer; text-align: center; transition: border-color 0.2s; }
+        .tariff-card.free { border-color: var(--success); }
+        .tariff-card.premium-unlocked { border-color: var(--primary) !important; box-shadow: 0 0 15px rgba(37, 99, 235, 0.3); }
+        
+        /* Блок промокода */
+        .promo-box { margin-top: 25px; background: var(--card); border: 1px solid var(--border); padding: 15px; border-radius: 8px; display: flex; gap: 10px; align-items: center; justify-content: center; }
+        .promo-box input { background: #1f2937; border: 1px solid #374151; color: #fff; padding: 8px 12px; border-radius: 4px; outline: none; font-size: 14px; }
+        .promo-box button { background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        .promo-box button:hover { background: #1d4ed8; }
+
+        /* Навигационные вкладки */
+        .tabs { display: flex; gap: 5px; margin-bottom: 12px; background: #0b0f19; padding: 5px; border-radius: 8px; border: 1px solid var(--border); }
+        .tab-btn { background: transparent; border: none; color: var(--muted); padding: 8px 16px; font-weight: bold; cursor: pointer; border-radius: 6px; flex-grow: 1; transition: background 0.2s; }
+        .tab-btn.active { background: var(--primary); color: #fff; }
+        .tab-content { display: none; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+        .tab-content.active { display: block; }
+
+        .config-box { background: #0b0f19; padding: 12px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 12px; display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
+        .config-item { display: flex; flex-direction: column; gap: 4px; }
+        .config-item label { font-size: 10px; text-transform: uppercase; color: var(--muted); font-weight: bold; }
+        .config-item select, .config-item input { background: #1f2937; border: 1px solid #374151; color: #fff; padding: 6px; border-radius: 4px; font-size: 13px; outline: none; }
+        .ip-wrap { display: flex; align-items: center; background: #1f2937; border: 1px solid #374151; border-radius: 4px; padding: 0 8px; }
+        .ip-wrap span { font-family: monospace; color: var(--success); font-weight: bold; }
+        .ip-wrap input { border: none; background: transparent; padding: 6px 3px; width: 100%; color: white; outline: none; }
+        .status-bar { display: flex; justify-content: space-between; background: #070a12; padding: 10px; border-radius: 6px; margin-bottom: 12px; font-family: monospace; font-size: 13px; border: 1px solid var(--border); }
+        .btn-group { display: flex; gap: 8px; margin-bottom: 12px; }
+        .btn { padding: 8px 16px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; color: white; }
+        .start { background: var(--success); } .restart { background: var(--warning); } .stop { background: var(--danger); }
+        .btn:disabled { background: #1f2937 !important; color: var(--muted) !important; cursor: not-allowed; }
+        
+        /* Профессиональный терминал */
+        .term-container { background: #030712; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+        .console { padding: 10px; height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px; color: #38bdf8; white-space: pre-wrap; word-break: break-all; }
+        .term-input-box { display: flex; background: #070a12; border-top: 1px solid var(--border); align-items: center; }
+        .term-input-box span { padding: 0 0 0 10px; color: var(--success); font-family: monospace; font-weight: bold; }
+        .term-input-box input { background: transparent; border: none; color: #fff; padding: 10px; font-family: monospace; font-size: 12px; flex-grow: 1; outline: none; }
+        
+        .file-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: #0b0f19; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 6px; font-family: monospace; font-size: 13px; }
+        .plug-item { background: #0b0f19; border: 1px solid var(--border); padding: 12px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .plug-desc { font-size: 12px; color: var(--muted); margin: 2px 0 0 0; }
+        .btn-plug { background: var(--primary); border: none; color: white; font-size: 12px; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-plug.installed { background: #1f2937; color: var(--success); cursor: default; }
+    </style>
+</head>
+<body>
+    <!-- ЭКРАН 1: ГЛАВНОЕ МЕНЮ -->
+    <div id="welcomeScreen">
+        <h1>TopMcsh Hosting</h1>
+        <p style="color: var(--muted);">Высокопроизводительный хостинг игровых серверов. Изолированные контейнеры, защита от сетевых угроз и удобное администрирование.</p>
+        <button class="btn-main" onclick="move('welcomeScreen', 'tariffScreen')">Начать работу</button>
+    </div>
+
+    <!-- ЭКРАН 2: ВЫБОР ТАРИФОВ С ПРОМОКОДОМ -->
+    <div id="tariffScreen">
+        <h3 style="text-align:center; margin-bottom: 20px;">Конфигурация сервера — Выберите тариф</h3>
+        <div class="tariff-grid">
+            <div class="tariff-card free" onclick="selectTariff('free')">
+                <h4>Бесплатный</h4><b style="color:#fff;">0 руб / мес</b><p style="font-size:11px; color:var(--muted);">4096 MB RAM • 1 ядро vCPU</p>
+                <button class="btn-main" style="padding:6px; width:100%; font-size:12px; margin-top:10px;">Выбрать</button>
+            </div>
+            <div class="tariff-card" id="cardSoplyak" onclick="selectTariff('soplyak')">
+                <h4>Сопляк</h4><b style="color:#fff;">199 руб / мес</b><p style="font-size:11px; color:var(--muted);">6144 MB RAM • 2 ядра vCPU</p>
+                <button class="btn-main" id="btnSoplyak" style="padding:6px; width:100%; font-size:12px; background:#374151; margin-top:10px;">Купить</button>
+            </div>
+            <div class="tariff-card" id="cardKrutoy" onclick="selectTariff('krutoy')">
+                <h4>Крутой</h4><b style="color:#fff;">599 руб / мес</b><p style="font-size:11px; color:var(--muted);">12288 MB RAM • 4 ядра vCPU</p>
+                <button class="btn-main" id="btnKrutoy" style="padding:6px; width:100%; font-size:12px; background:#374151; margin-top:10px;">Купить</button>
+            </div>
+        </div>
+
+        <div class="promo-box">
+            <input type="text" id="promoInput" placeholder="Введите промокод">
+            <button onclick="checkPromo()">Применить</button>
+        </div>
+    </div>
+
+    <!-- ЭКРАН 3: ГЛАВНЫЙ ЛЕЙАУТ ПАНЕЛИ -->
+    <div id="mainPanelLayout">
+        <h3 style="margin:0 0 10px 0; color:#fff;" id="panelTitle">Панель управления TopMcsh — Тариф: Бесплатный</h3>
+        
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('panelTab', this)">Панель</button>
+            <button class="tab-btn" onclick="switchTab('filesTab', this)">Файлы</button>
+            <button class="tab-btn" onclick="switchTab('pluginsTab', this)">Плагины</button>
+        </div>
+
+        <!-- ВКЛАДКА 1: ПАНЕЛЬ (КОНСОЛЬ И НАСТРОЙКИ) -->
+        <div id="panelTab" class="tab-content active">
+            <div class="config-box">
+                <div class="config-item"><label>Режим</label><select id="sType"><option value="Java">Java</option><option value="Bedrock">Bedrock</option></select></div>
+                <div class="config-item"><label>Ядро</label><select id="sCore"><option value="Paper">Paper</option><option value="Purpur">Purpur</option><option value="Spigot">Spigot</option></select></div>
+                <div class="config-item"><label>Версия</label><select id="sVer"><option value="1.12.2">1.12.2</option><option value="1.16.5">1.16.5</option><option value="1.20.4">1.20.4</option></select></div>
+                <div class="config-item" style="grid-column: span 2;"><label>Адрес (mc. НАЗВАНИЕ .ru)</label><div class="ip-wrap"><span>mc.</span><input type="text" id="ipIn" value="topmcsh" onchange="setIp()"><span>.ru</span></div></div>
+            </div>
+            <div class="status-bar">
+                <div>Статус: <span id="statusTxt" style="color:var(--danger); font-weight:bold;">ВЫКЛЮЧЕН</span></div>
+                <div>Узел: <span id="loadIp" style="color:#60a5fa; font-weight:bold;">mc.topmcsh.ru</span></div>
+            </div>
+            <div class="btn-group">
+                <button class="btn start" id="bStart" onclick="srv('start')">Старт</button>
+                <button class="btn restart" id="bRest" onclick="srv('restart')">Рестарт</button>
+                <button class="btn stop" id="bStop" onclick="srv('stop')">Стоп</button>
+            </div>
+            <div class="term-container">
+                <div class="console" id="cBox">[Система] Среда окружения готова. Ожидание команды на запуск...</div>
+                <div class="term-input-box"><span>&gt;</span><input type="text" id="cmdIn" placeholder="Введите команду сервера..." onkeydown="execCmd(event)"></div>
+            </div>
+        </div>
+
+        <!-- ВКЛАДКА 2: ФАЙЛЫ -->
+        <div id="filesTab" class="tab-content">
+            <h4 style="margin:0 0 10px 0;">Файловая система (/root)</h4>
+            <div class="file-item"><span>plugins/</span><span style="color:var(--muted);">Директория</span></div>
+            <div class="file-item"><span>world/</span><span style="color:var(--muted);">Директория</span></div>
+            <div class="file-item"><span>server.properties</span><span style="color:var(--success);">4.2 KB</span></div>
+            <div class="file-item"><span>spigot.yml</span><span style="color:var(--success);">1.8 KB</span></div>
+            <div class="file-item"><span>ops.json</span><span style="color:var(--success);">0.1 KB</span></div>
+        </div>
+
+        <!-- ВКЛАДКА 3: ПЛАГИНЫ -->
+        <div id="pluginsTab" class="tab-content">
+            <h4 style="margin:0 0 15px 0;">Управление расширениями ядра</h4>
+            <div class="plug-item"><div><strong>WorldEdit</strong><p class="plug-desc">Инструмент масштабного изменения ландшафта.</p></div><button class="btn-plug" id="p1" onclick="plug('p1','WorldEdit')">Установить</button></div>
+            <div class="plug-item"><div><strong>EssentialsX</strong><p class="plug-desc">Набор базовых утилит администрирования и навигации.</p></div><button class="btn-plug" id="p2" onclick="plug('p2','EssentialsX')">Установить</button></div>
+            <div class="plug-item"><div><strong>ClearLag</strong><p class="plug-desc">Модуль оптимизации ОЗУ и контроля сущностей.</p></div><button class="btn-plug" id="p3" onclick="plug('p3','ClearLag')">Установить</button></div>
+            <div class="plug-item"><div><strong>ViaVersion</strong><p class="plug-desc">Обеспечение обратной сетевой совместимости клиент-сервер.</p></div><button class="btn-plug" id="p4" onclick="plug('p4','ViaVersion')">Установить</button></div>
+        </div>
+    </div>
+<script>
+    let currentIp = localStorage.getItem('hRawIp') || 'topmcsh';
+    document.getElementById('ipIn').value = currentIp;
+    document.getElementById('loadIp').innerText = `mc.${currentIp}.ru`;
+
+    const cBox = document.getElementById('cBox'), statusTxt = document.getElementById('statusTxt');
+    const bStart = document.getElementById('bStart'), bStop = document.getElementById('bStop'), bRest = document.getElementById('bRest');
+    let sStatus = 'offline', tInterval = null, currentMaxRam = 4096, isPremium = false;
+
+    function msg(text, color = '#38bdf8') {
+        const time = new Date().toLocaleTimeString();
+        const d = document.createElement('div'); d.style.color = color;
+        d.innerText = `[${time} INFO]: ${text}`; cBox.appendChild(d);
+        cBox.scrollTop = cBox.scrollHeight;
+    }
+    function move(from, to) { document.getElementById(from).style.display = 'none'; document.getElementById(to).style.display = 'block'; }
+    
+    function switchTab(tabId, btn) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        btn.classList.add('active');
+    }
+
+    function checkPromo() {
+        const code = document.getElementById('promoInput').value.trim();
+        if(code === 'zeksya2026') {
+            isPremium = true; currentMaxRam = 12288;
+            alert('Промокод успешно активирован! Доступен тариф "Крутой" (12288 MB RAM).');
+            document.getElementById('cardKrutoy').classList.add('premium-unlocked');
+            document.getElementById('btnKrutoy').style.background = 'var(--primary)';
+            document.getElementById('btnKrutoy').innerText = 'Активировать';
+        } else { alert('Ошибка: Промокод не найден в реестре хостинга.'); }
+    }
+
+    function selectTariff(tariff) {
+        if((tariff === 'soplyak' || tariff === 'krutoy') && !isPremium) {
+            alert('Ошибка: Недостаточно средств на балансе учетной записи.'); return;
+        }
+        if(tariff === 'krutoy' && isPremium) { document.getElementById('panelTitle').innerText = 'Панель управления TopMcsh — Тариф: Крутой'; }
+        move('tariffScreen', 'mainPanelLayout');
+    }
+
+    function setIp() {
+        let val = document.getElementById('ipIn').value.trim().toLowerCase();
+        if(!val) val = 'server'; currentIp = val; localStorage.setItem('hRawIp', currentIp);
+        document.getElementById('loadIp').innerText = `mc.${currentIp}.ru`;
+        msg(`Изменение привязки сокета на: mc.${currentIp}.ru`, '#a855f7');
+    }
+
+    function plug(id, name) {
+        const b = document.getElementById(id); if(b.classList.contains('installed')) return;
+        b.innerText = 'Загрузка...'; b.style.background = 'var(--warning)';
+        setTimeout(() => { b.innerText = 'Установлен'; b.className = 'btn-plug installed'; msg(`Служба синхронизации: Модуль ${name}.jar успешно добавлен в стек.`, 'var(--success)'); }, 1200);
+    }
+
+    function lock(b) { bStart.disabled = b; bStop.disabled = b; bRest.disabled = b; }
+
+    function execCmd(e) {
+        if (e.key !== 'Enter') return;
+        const input = document.getElementById('cmdIn'); const cmd = input.value.trim(); if(!cmd) return;
+        msg(`Выполнение команды оператора: ${cmd}`, '#a855f7'); input.value = '';
+        if(sStatus !== 'online') { msg('Системная ошибка: Ядро не отвечает. Процесс завершен.', 'var(--danger)'); return; }
+        
+        setTimeout(() => {
+            const low = cmd.toLowerCase();
+            if(low.startsWith('/op ')) msg(`Административные права (OP) успешно делегированы: ${cmd.substring(4)}`, 'var(--success)');
+            else if(low.startsWith('/ban ')) msg(`Сетевой идентификатор ${cmd.substring(5)} внесен в черный список.`, 'var(--warning)');
+            else if(low === '/help') msg('Доступный интерфейс команд: /help, /op [user], /ban [user], /say [text], /clear', 'white');
+            else if(low.startsWith('/say ')) msg(`[Глобальное оповещение]: ${cmd.substring(5)}`, 'var(--warning)');
+            else if(low === '/clear') cBox.innerHTML = '<div style="color:var(--success)">Лог терминала очищен.</div>';
+            else msg(`Команда "${cmd}" успешно обработана конвейером ядра.`, 'white');
+        }, 300);
+    }
+
+    function srv(type) {
+        const p = document.getElementById('sType').value, c = document.getElementById('sCore').value, v = document.getElementById('sVer').value;
+        if (type === 'start') {
+            if(sStatus !== 'offline') return; sStatus = 'loading'; lock(true); cBox.innerHTML = '';
+            msg('Старт изолированного docker-контейнера...', 'var(--warning)');
+            let t = 20;
+            tInterval = setInterval(() => {
+                t--;
+                if(t > 0) {
+                    statusTxt.innerText = `ЗАПУСК (${t}с)`; statusTxt.style.color = 'var(--warning)';
+                    if(t === 19) msg('Вызов Java Virtual Machine v17.0.2...', 'white');
+                    if(t === 18) msg(`Проверка лимитов памяти: выделено ${currentMaxRam} MB RAM.`);
+                    if(t === 16) msg('Сканирование контрольных хэш-сумм файловой системы...');
+                    if(t === 14) msg(`Подгрузка исполняемого архива ядра ${c}-${v}.jar...`);
+                    if(t === 12) msg('Системное соглашение: eula.txt успешно валидирован.');
+                    if(t === 10) msg('Инициализация десериализации реестра учетных записей.');
+                    if(t === 8) msg('Синхронизация структуры расширений из директории /plugins...');
+                    if(t === 6) msg(`Сетевой сокет успешно открыт. Ожидание линка на mc.${currentIp}.ru...`);
+                    if(t === 3) msg('Построение карты чанков региона "world" завершено на 100%.');
+                } else {
+                    clearInterval(tInterval); sStatus = 'online'; statusTxt.innerText = 'В СЕТИ'; statusTxt.style.color = 'var(--success)'; lock(false);
+                    msg(`Успешно! Сервер запущен и обрабатывает трафик на mc.${currentIp}.ru`, 'var(--success)');
+                }
+            }, 1000);
+        } else if (type === 'stop') {
+            if(sStatus !== 'online') return; sStatus = 'stopping'; clearInterval(tInterval); lock(true);
+            msg('Получен прерывающий сигнал SIGINT от веб-панели.', 'var(--danger)');
+            let t = 10;
+            tInterval = setInterval(() => {
+                t--;
+                if(t > 0) {
+                    statusTxt.innerText = `ОСТАНОВКА (${t}с)`; statusTxt.style.color = 'var(--warning)';
+                    if(t === 8) msg('Выгрузка активных сессий игроков. Сброс чанков на SSD...');
+                    if(t === 4) msg('Остановка потоков выполнения расширений ядра...');
+                } else {
+                    clearInterval(tInterval); sStatus = 'offline'; statusTxt.innerText = 'ВЫКЛЮЧЕН'; statusTxt.style.color = 'var(--danger)'; lock(false);
+                    msg('Потоки JVM закрыты. Выходной код операции: 0.', 'white');
+                }
+            }, 1000);
+        } else if (type === 'restart') {
+            msg('Перезапуск виртуального окружения...', 'var(--warning)'); srv('stop');
+            setTimeout(() => { let chk = setInterval(() => { if(sStatus === 'offline') { clearInterval(chk); srv('start'); } }, 300); }, 1000);
+        }
+    }
+</script>
+</body>
+</html>
